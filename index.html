@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
+    	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="title" content="skogstad">
 	<meta name="description" content="skogstad link page">
@@ -12,29 +12,74 @@
 	<meta name="author" content="Henrik Skogstad">
 	<title>Skogstad</title>
 	<link rel="shortcut icon" type="image/png" href="images/image.png" />
-    <link rel="stylesheet" href="css/styles.css">
+   	<link rel="stylesheet" href="css/styles.css">
+	
+	<style>
+        /* -- Design for hele body -- */
+        body {
+            margin: 0;
+            background-color: #333;
+        }
+        /* -- Navbar design -- */
+        .navbar a {
+            text-decoration: none;
+        }
+        .navbar h2 {
+            text-align: center;
+            color: #d2002d;
+            font-size: 50px;
+            font-family: 'Roboto', sans-serif;
+            padding-top: 10%;
+        }
+        .navbar {
+            text-align: center;
+            margin: 0;
+            font-size: 20px;
+            font-family: 'Roboto', sans-serif;
+            width: 100%;
+        }
+        ul {
+        }
+        ul li {
+            display: inline-block;
+            margin-bottom: 5px;
+            margin-top: 5px;
+            margin-right: 20px;
+        }
+        ul li a {
+            text-decoration: none;
+            color: #fff;
+        }
+        ul li a:hover {
+            color: #d2002d;
+            transition: 0.25s;
+        }
+        /* -- UIA Logo -- */
+        .UIA-Logo {
+            text-align: center;
+            float: bottom;
+            padding-top: 100px;
+        }
+    </style>
 </head>
-
-<header>
-    <h1>Henrik Skogstad</h1>
-    <p><i>Student, UiA</i></p>
-</header>
-
-<nav>
-    <ul style="list-style: none;">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="index.html">Projects</a></li>
-        <li><a href="index.html">About</a></li>
-    </ul>
-</nav>
-
 <body>
+
+<!-- Navbar -->
+<section class="navbar">
+    <a href="index.html"><h2>UiA</h2></a>
+    <ul>
+        <li><a href="https://github.com/Skogstad-beep" target="_blank">Github</a></li>
+        <li><a href="https://www.youtube.com/channel/UCy0a8EIgrMIhomX0v0USUjg" target="_blank">Youtube</a></li>
+        <li><a href="https://www.linkedin.com/in/henrik-skogstad-150b83199/" target="_blank">LinkedIn</a></li>
+    </ul>
+</section>
+
+<!-- UIA Logo -->
+<section class="UIA-Logo">
+    <img src="https://i.imgur.com/SPDBRXo.png" width = "250" height = "auto" alt="Uia Logo">
+</section>
+
 </body>
 
-<footer>
-
-</footer>
 
 </html>
-
-<!-- Fyll inn notat her -->
