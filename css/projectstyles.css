@@ -1,7 +1,7 @@
  /* -- Design for hele body -- */
         body {
             margin: 0;
-            background-color: #333;
+            background-color: #000000;
         }
         /* -- Navbar design -- */
         .navbar a {
@@ -27,7 +27,7 @@
 
         /* -- UIA Logo -- */
         .UIA-Logo {
-            text-align: center;
+            text-align: left;
             float: bottom;
-            padding-top: 100px;
+            padding-top: 20px;
         }
