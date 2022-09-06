@@ -1,7 +1,7 @@
  /* -- Design for hele body -- */
         body {
             margin: 0;
-            background-color: #000000;
+            background-color: #333;
         }
         /* -- Navbar design -- */
         .navbar a {
@@ -24,7 +24,22 @@
             font-family: 'Roboto', sans-serif;
             width: 100%;
         }
-        
+        ul {
+        }
+        ul li {
+            display: inline-block;
+            margin-bottom: 5px;
+            margin-top: 50px;
+            margin-right: 20px;
+        }
+        ul li a {
+            text-decoration: none;
+            color: #fff;
+        }
+        ul li a:hover {
+            color: #d2002d;
+            transition: 0.25s;
+        }
         /* -- UIA Logo -- */
         .UIA-Logo {
             text-align: center;
