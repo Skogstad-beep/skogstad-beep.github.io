@@ -1,0 +1,20 @@
+        body {
+            margin: 0;
+            background-color: #000000;
+        }
+        
+        a {
+            text-decoration: none;
+        }
+        
+        p {
+         color: #fff;
+         text-align: center;
+         font-family: 'Roboto', sans-serif;
+        }
+        
+        h2 {
+            text-align: center;
+            color: #d2002d;
+            font-size: 50px;
+            font-family: 'Roboto', sans-serif;
