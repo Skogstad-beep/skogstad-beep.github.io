@@ -7,6 +7,9 @@
         .navbar a {
             text-decoration: none;
         }
+        .navbar p {
+         color: #fff;
+        }
         .navbar h2 {
             text-align: center;
             color: #d2002d;
