@@ -12,7 +12,7 @@
         }
         .navbar h2 {
             text-align: center;
-            color: #cf9611;
+            color: #f58b00;
             font-size: 50px;
             font-family: 'Roboto', sans-serif;
             padding-top: 10%;
@@ -37,6 +37,6 @@
             color: #fff;
         }
         ul li a:hover {
-            color: #cf9611;
+            color: #f58b00;
             transition: 0.25s;
         }
