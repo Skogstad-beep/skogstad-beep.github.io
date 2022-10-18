@@ -37,12 +37,6 @@
             color: #fff;
         }
         ul li a:hover {
-            color: #d2002d;
+            color: #cf9611;
             transition: 0.25s;
-        }
-        /* -- UIA Logo -- */
-        .UIA-Logo {
-            text-align: center;
-            float: bottom;
-            padding-top: 100px;
         }
