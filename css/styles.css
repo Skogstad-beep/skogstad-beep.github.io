@@ -1,7 +1,7 @@
  /* -- Design for hele body -- */
         body {
             margin: 0;
-            background-color: #333;
+            background-color: #000000;
         }
         /* -- Navbar design -- */
         .navbar a {
@@ -12,7 +12,7 @@
         }
         .navbar h2 {
             text-align: center;
-            color: #d2002d;
+            color: #cf9611;
             font-size: 50px;
             font-family: 'Roboto', sans-serif;
             padding-top: 10%;
