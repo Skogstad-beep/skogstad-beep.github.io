@@ -1,2 +1,2 @@
 # SKOGSTAD
-my website
+linktree.
