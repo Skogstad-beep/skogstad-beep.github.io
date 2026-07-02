@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>VM 2026 – Lag din bracket</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="description" content="Bygg din egen bracket for Fotball-VM 2026. Velg gruppevinnere, tredjeplasser og hvert oppgjør fra 32-delsfinalen til finalen.">
+<meta name="theme-color" content="#0b0e0d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0e0d;
+  --bg-grad: radial-gradient(ellipse 120% 60% at 50% -10%, #12241a 0%, #0b0e0d 55%);
+  --surface:#131813;
+  --surface-2:#1b221c;
+  --surface-3:#232b23;
+  --border:#293029;
+  --border-soft:#1e251e;
+  --text:#f3f5f1;
+  --text-dim:#9aa89e;
+  --text-faint:#5f6b62;
+  --grass:#2f6b46;
+  --grass-dim:#1c3d29;
+  --gold:#e3b23c;
+  --gold-soft:rgba(227,178,60,.14);
+  --gold-line:rgba(227,178,60,.55);
+  --brick:#c1573f;
+  --radius:14px;
+  --radius-sm:9px;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --shadow: 0 10px 30px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg-grad),var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a{color:inherit;}
+button{font-family:inherit;}
+::selection{background:var(--gold-soft);color:var(--gold);}
+
+/* ---------- utility ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+.hide{display:none !important;}
+.mono{font-family:var(--font-mono);}
+.dim{color:var(--text-dim);}
+.center{text-align:center;}
+
+/* ---------- top bar ---------- */
+header.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(11,14,13,.86);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border-soft);
+}
+.topbar-inner{
+  max-width:1180px;margin:0 auto;padding:14px 20px;
+  display:flex;align-items:center;gap:18px;justify-content:space-between;
+}
+.brand{
+  display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:700;font-size:16px;
+  letter-spacing:.2px;white-space:nowrap;background:transparent;border:none;color:inherit;cursor:pointer;
+  padding:6px 4px;margin:-6px -4px;border-radius:8px;transition:.15s;
+}
+.brand:hover{background:var(--surface);}
+.brand-icon{flex-shrink:0;}
+.steps-nav{
+  display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.steps-nav::-webkit-scrollbar{display:none;}
+.step-pill{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 13px;border-radius:100px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text-dim);
+  font-size:12.5px;font-weight:600;white-space:nowrap;
+  cursor:pointer;transition:.15s ease;
+}
+.step-pill .num{
+  width:17px;height:17px;border-radius:50%;background:var(--surface-3);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--font-mono);
+  flex-shrink:0;
+}
+.step-pill.active{border-color:var(--gold-line);color:var(--gold);background:var(--gold-soft);}
+.step-pill.active .num{background:var(--gold);color:#1a1305;}
+.step-pill.done{color:var(--text);}
+.step-pill.done .num{background:var(--grass);color:#eafff0;}
+.step-pill:disabled,.step-pill.locked{opacity:.4;cursor:not-allowed;}
+.reset-btn{
+  border:1px solid var(--border);background:transparent;color:var(--text-faint);
+  padding:7px 12px;border-radius:100px;font-size:12px;cursor:pointer;white-space:nowrap;
+  transition:.15s;
+}
+.reset-btn:hover{color:var(--brick);border-color:var(--brick);}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.tb-btn{
+  border:1px solid var(--border);background:transparent;color:var(--text-dim);
+  padding:7px 12px;border-radius:100px;font-size:12px;cursor:pointer;white-space:nowrap;
+  transition:.15s;
+}
+.tb-btn:hover{color:var(--gold);border-color:var(--gold-line);}
+.tb-live{display:flex;align-items:center;color:var(--text);}
+.live-dot{
+  display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--brick);
+  margin-right:7px;flex-shrink:0;
+  animation:livepulse 1.8s infinite;
+}
+@keyframes livepulse{
+  0%{box-shadow:0 0 0 0 rgba(193,87,63,.55);}
+  70%{box-shadow:0 0 0 7px rgba(193,87,63,0);}
+  100%{box-shadow:0 0 0 0 rgba(193,87,63,0);}
+}
+
+/* ---------- hero ---------- */
+.hero{padding:64px 20px 40px;position:relative;overflow:hidden;}
+.hero:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 39px, var(--border-soft) 39px 40px);
+  mask-image:linear-gradient(180deg, black, transparent 70%);
+  opacity:.35;
+}
+.hero-inner{max-width:1180px;margin:0 auto;position:relative;text-align:center;}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line);
+  padding:6px 14px;border-radius:100px;margin-bottom:22px;
+}
+.hero h1{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(38px,7vw,74px);line-height:.98;letter-spacing:-.02em;margin:0 0 18px;
+}
+.hero h1 span{color:var(--gold);}
+.hero p.lead{
+  max-width:560px;margin:0 auto 30px;color:var(--text-dim);
+  font-size:17px;line-height:1.6;
+}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:44px;}
+.btn{
+  font-family:var(--font-display);font-weight:600;font-size:15px;
+  padding:14px 26px;border-radius:100px;border:1px solid transparent;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;transition:.15s ease;
+}
+.btn-primary{background:var(--gold);color:#1a1305;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 22px -8px rgba(227,178,60,.5);}
+.btn-ghost{background:transparent;border-color:var(--border);color:var(--text);}
+.btn-ghost:hover{border-color:var(--text-dim);}
+.btn-danger{background:var(--brick);color:#fff;}
+.btn-danger:hover{transform:translateY(-1px);box-shadow:0 8px 22px -8px rgba(193,87,63,.55);}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.stat-row{display:flex;gap:0;justify-content:center;flex-wrap:wrap;border-top:1px solid var(--border-soft);max-width:640px;margin:0 auto;}
+.stat{flex:1;min-width:120px;padding:20px 10px;border-right:1px solid var(--border-soft);}
+.stat:last-child{border-right:none;}
+.stat b{display:block;font-family:var(--font-display);font-size:26px;color:var(--gold);}
+.stat span{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;}
+
+/* ---------- sections ---------- */
+section.step{padding:10px 20px 90px;display:none;}
+section.step.visible{display:block;}
+.step-head{max-width:640px;margin:0 auto 34px;text-align:center;}
+.step-head .k{font-family:var(--font-mono);color:var(--gold);font-size:12px;letter-spacing:.1em;text-transform:uppercase;}
+.step-head h2{font-family:var(--font-display);font-size:clamp(26px,4vw,36px);margin:8px 0 10px;}
+.step-head p{color:var(--text-dim);font-size:15px;line-height:1.6;margin:0;}
+
+/* ---------- group cards ---------- */
+.group-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:16px;max-width:1180px;margin:0 auto;
+}
+.group-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;
+}
+.group-card-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 16px;border-bottom:1px solid var(--border-soft);
+}
+.group-card-head h3{margin:0;font-family:var(--font-display);font-size:15px;letter-spacing:.03em;}
+.group-progress{
+  width:22px;height:22px;border-radius:50%;position:relative;
+  background:conic-gradient(var(--gold) calc(var(--p,0)*1%), var(--surface-3) 0);
+}
+.group-progress:after{
+  content:"";position:absolute;inset:3px;border-radius:50%;background:var(--surface);
+}
+.team-list{list-style:none;margin:0;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.team-row{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);
+  background:var(--surface-2);border:1px solid transparent;transition:.15s;
+}
+.team-row .rank{
+  font-family:var(--font-mono);font-size:11px;font-weight:600;
+  width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--surface-3);color:var(--text-faint);flex-shrink:0;
+}
+.team-row.r1 .rank{background:var(--gold);color:#1a1305;}
+.team-row.r2{background:var(--grass-dim);}
+.team-row.r2 .rank{background:#c8d6cc;color:#16241b;}
+.team-row.r3 .rank{background:#9a5a2e;color:#231206;}
+.team-row.r4{opacity:.55;}
+.team-row .flag{font-size:17px;line-height:1;}
+.team-row .name{flex:1;font-size:13.5px;font-weight:500;}
+.team-row .movers{display:flex;gap:3px;}
+.team-row .movers button{
+  width:23px;height:23px;border-radius:6px;border:1px solid var(--border);background:var(--surface-3);
+  color:var(--text-dim);cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;
+}
+.team-row .movers button:hover{border-color:var(--gold-line);color:var(--gold);}
+.team-row .movers button:disabled{opacity:.25;cursor:default;}
+.group-card-foot{
+  padding:9px 16px 13px;font-size:11px;color:var(--text-faint);font-family:var(--font-mono);
+  border-top:1px solid var(--border-soft);
+}
+.group-card-foot b{color:var(--gold);}
+
+/* ---------- third place ---------- */
+.third-counter{
+  position:sticky;top:66px;z-index:20;max-width:340px;margin:0 auto 26px;
+  background:var(--surface);border:1px solid var(--border);border-radius:100px;
+  padding:10px 18px;text-align:center;font-family:var(--font-mono);font-size:13px;
+  display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:var(--shadow);
+}
+.third-counter .n{color:var(--gold);font-weight:600;}
+.third-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:12px;max-width:1000px;margin:0 auto;
+}
+.third-card{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:13px 15px;cursor:pointer;transition:.15s;
+}
+.third-card:hover{border-color:var(--border);background:var(--surface-2);}
+.third-card.selected{border-color:var(--gold-line);background:var(--gold-soft);}
+.third-card .flag{font-size:22px;}
+.third-card .info{flex:1;}
+.third-card .info b{display:block;font-size:14px;font-weight:600;}
+.third-card .info span{font-size:11px;color:var(--text-faint);font-family:var(--font-mono);text-transform:uppercase;}
+.third-card .tick{
+  width:20px;height:20px;border-radius:50%;border:1px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;
+}
+.third-card.selected .tick{background:var(--gold);border-color:var(--gold);color:#1a1305;}
+
+/* ---------- live sync buttons (in wizard steps) ---------- */
+.live-sync-btn{margin-top:16px;display:inline-flex;}
+.live-sync-btn .live-dot{margin-right:8px;}
+
+/* ---------- live page ---------- */
+.live-setup{
+  max-width:520px;margin:0 auto;text-align:center;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius);padding:30px 26px;
+}
+.live-setup.center{padding:50px 26px;}
+.live-setup h3{font-family:var(--font-display);font-size:19px;margin:0 0 10px;}
+.live-setup p{color:var(--text-dim);font-size:14px;line-height:1.65;margin:0 0 20px;}
+.live-setup a{color:var(--gold);}
+.fd-key-input{
+  width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--radius-sm);padding:11px 13px;font-size:13.5px;font-family:var(--font-mono);
+}
+.fd-key-input:focus{outline:none;border-color:var(--gold-line);}
+.live-status{
+  max-width:1180px;margin:0 auto 22px;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--text-faint);font-family:var(--font-mono);
+}
+.live-group-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:16px;max-width:1180px;margin:0 auto 36px;
+}
+.live-table{padding:8px;}
+.live-row{
+  display:grid;grid-template-columns:20px 20px 1fr 24px 34px 34px;gap:6px;align-items:center;
+  padding:7px 8px;font-size:11.5px;border-radius:var(--radius-sm);
+}
+.live-row-head{color:var(--text-faint);font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding-bottom:4px;}
+.live-row.r1,.live-row.r2{background:var(--surface-2);}
+.live-row.r3{background:rgba(227,178,60,.08);}
+.live-row.r4{opacity:.5;}
+.live-row .rank{font-family:var(--font-mono);color:var(--text-faint);}
+.live-row .flag{font-size:14px;}
+.live-row .nm{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.live-row .pts{font-weight:700;color:var(--gold);font-family:var(--font-mono);}
+.live-subhead{
+  font-family:var(--font-display);font-size:20px;text-align:center;max-width:1180px;margin:44px auto 18px;
+}
+.live-r32-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:12px;max-width:1180px;margin:0 auto;
+}
+.live-r32-grid .mrow{cursor:default;}
+.live-r32-grid .mrow .flag{font-size:15px;width:18px;text-align:center;display:inline-block;margin-right:6px;}
+
+/* ---------- bracket ---------- */
+.bracket-note{
+  max-width:560px;margin:0 auto 30px;text-align:center;font-size:12.5px;color:var(--text-faint);
+  background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 16px;
+}
+.bracket-scroll{overflow-x:auto;padding-bottom:20px;}
+.bracket{display:flex;gap:34px;min-width:max-content;padding:6px 20px 6px 4px;margin:0 auto;width:max-content;}
+.bracket-col{display:flex;flex-direction:column;justify-content:space-around;gap:14px;width:216px;flex-shrink:0;}
+.bracket-col.bronze-col{justify-content:flex-start;padding-top:40px;}
+.col-title{
+  text-align:center;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--text-faint);margin-bottom:6px;
+}
+.match{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;
+}
+.match.decided{border-color:var(--border);}
+.mrow{
+  display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;
+  border-bottom:1px solid var(--border-soft);transition:.15s;position:relative;
+}
+.mrow:last-child{border-bottom:none;}
+.mrow .flag{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+.mrow .nm{flex:1;font-size:12.5px;font-weight:500;color:var(--text-dim);}
+.mrow.empty .nm{color:var(--text-faint);font-style:italic;font-weight:400;}
+.mrow.empty{cursor:default;}
+.mrow.picked{background:var(--gold-soft);}
+.mrow.picked .nm{color:var(--gold);font-weight:700;}
+.mrow.loser{opacity:.4;}
+.mrow:not(.empty):not(.picked):hover{background:var(--surface-2);}
+.mrow-del{
+  flex-shrink:0;width:20px;height:20px;border-radius:6px;border:none;background:transparent;
+  color:var(--text-faint);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  opacity:0;transition:.15s;
+}
+.mrow:hover .mrow-del{opacity:1;}
+.mrow-del:hover{background:rgba(193,87,63,.16);color:var(--brick);}
+.tag3{
+  font-family:var(--font-mono);font-size:9px;color:var(--text-faint);
+  background:var(--surface-3);padding:1px 5px;border-radius:4px;flex-shrink:0;
+}
+.champion-slot{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:216px;flex-shrink:0;text-align:center;gap:10px;
+}
+.trophy-big{font-size:44px;filter:drop-shadow(0 0 18px var(--gold-line));}
+.champion-slot .flag{font-size:38px;}
+.champion-slot b{font-family:var(--font-display);font-size:17px;}
+.champion-slot span{font-size:11px;color:var(--text-faint);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;}
+
+/* connectors via simple css lines using pseudo columns */
+.bracket-col .match + .match{margin-top:0;}
+
+/* ---------- footer nav for steps ---------- */
+.step-actions{
+  max-width:1180px;margin:40px auto 0;padding:0 0;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.step-actions .right{margin-left:auto;display:flex;gap:10px;}
+
+/* ---------- result ---------- */
+.result-hero{
+  max-width:520px;margin:0 auto 40px;text-align:center;
+  background:linear-gradient(180deg, var(--surface), var(--surface-2));
+  border:1px solid var(--gold-line);border-radius:20px;padding:44px 30px;
+  box-shadow:0 20px 60px -20px rgba(227,178,60,.25);
+}
+.result-hero .trophy{font-size:56px;margin-bottom:10px;filter:drop-shadow(0 0 24px var(--gold-line));}
+.result-hero .flag{font-size:64px;margin:6px 0;}
+.result-hero .k{font-family:var(--font-mono);color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;}
+.result-hero h2{font-family:var(--font-display);font-size:clamp(28px,5vw,42px);margin:8px 0 4px;}
+.result-hero p{color:var(--text-dim);font-size:14px;margin:0 0 22px;}
+.result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+.path-list{max-width:640px;margin:0 auto 40px;}
+.path-list h3{font-family:var(--font-display);font-size:17px;margin-bottom:14px;text-align:center;}
+.path-row{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border-soft);
+  font-size:13.5px;
+}
+.path-row .rlabel{width:118px;flex-shrink:0;font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;}
+.path-row b{font-weight:600;}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(16px) scale(.97);
+  min-width:260px;max-width:380px;width:calc(100% - 40px);
+  background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--gold);
+  color:var(--text);padding:13px 16px;border-radius:12px;z-index:300;
+  display:flex;gap:11px;align-items:flex-start;
+  opacity:0;pointer-events:none;transition:.28s cubic-bezier(.22,.9,.32,1.2);
+  box-shadow:0 18px 44px -16px rgba(0,0,0,.65);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+.toast-icon{
+  flex-shrink:0;width:21px;height:21px;border-radius:50%;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
+}
+.toast-body{min-width:0;}
+.toast-body b{display:block;font-size:13.5px;font-weight:700;line-height:1.3;}
+.toast-body span{display:block;font-size:12px;color:var(--text-dim);line-height:1.45;margin-top:2px;}
+.toast.success{border-left-color:var(--gold);}
+.toast.success .toast-icon{background:var(--gold-soft);color:var(--gold);}
+.toast.info{border-left-color:#5b8fae;}
+.toast.info .toast-icon{background:rgba(91,143,174,.16);color:#7fb0cc;}
+.toast.warning{border-left-color:#c98a3d;}
+.toast.warning .toast-icon{background:rgba(201,138,61,.16);color:#e0a75a;}
+.toast.error{border-left-color:var(--brick);}
+.toast.error .toast-icon{background:rgba(193,87,63,.16);color:var(--brick);}
+
+/* ---------- modal ---------- */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(6,8,7,.72);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:.2s ease;
+}
+.modal-overlay.show{opacity:1;pointer-events:auto;}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  max-width:480px;width:100%;max-height:84vh;overflow-y:auto;padding:26px 24px;
+  box-shadow:0 24px 70px -20px rgba(0,0,0,.7);
+  transform:translateY(10px);transition:.2s ease;
+}
+.modal-overlay.show .modal{transform:translateY(0);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px;}
+.modal-head h3{font-family:var(--font-display);font-size:19px;margin:0;}
+.modal-close{
+  background:var(--surface-3);border:none;color:var(--text-dim);width:28px;height:28px;border-radius:50%;
+  cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.modal-close:hover{color:var(--text);}
+.modal p{color:var(--text-dim);font-size:14px;line-height:1.65;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+.modal .fd-key-input{margin-bottom:4px;}
+
+.bracket-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.bracket-item{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--surface-2);
+}
+.bracket-item.active{border-color:var(--gold-line);background:var(--gold-soft);}
+.bracket-item .bi-info{flex:1;min-width:0;cursor:pointer;}
+.bracket-item .bi-info b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bracket-item .bi-info span{font-size:11px;color:var(--text-faint);font-family:var(--font-mono);}
+.bracket-item .bi-actions{display:flex;gap:4px;flex-shrink:0;}
+.bracket-item .bi-actions button{
+  width:26px;height:26px;border-radius:7px;border:1px solid var(--border);background:var(--surface-3);
+  color:var(--text-dim);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;
+}
+.bracket-item .bi-actions button:hover{border-color:var(--gold-line);color:var(--gold);}
+.bracket-item .bi-actions button.danger:hover{border-color:var(--brick);color:var(--brick);}
+.new-bracket-btn{
+  width:100%;padding:12px;border-radius:var(--radius-sm);border:1px dashed var(--border);
+  background:transparent;color:var(--text-dim);cursor:pointer;font-size:13px;font-weight:600;
+  transition:.15s;
+}
+.new-bracket-btn:hover{border-color:var(--gold-line);color:var(--gold);}
+
+.about-avatar{
+  width:56px;height:56px;border-radius:50%;background:var(--grass-dim);color:var(--gold);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:20px;font-weight:700;
+  margin-bottom:14px;
+}
+
+
+footer.site-foot{
+  border-top:1px solid var(--border-soft);padding:34px 20px 50px;text-align:center;
+  color:var(--text-faint);font-size:12px;line-height:1.8;
+}
+footer.site-foot a{color:var(--text-dim);text-decoration:none;margin:0 8px;}
+footer.site-foot a:hover{color:var(--gold);}
+.ai-badge{
+  display:inline-block;margin-top:12px;padding:9px 16px;border-radius:100px;
+  background:var(--surface-2);border:1px solid var(--border);
+  box-shadow:0 8px 22px -10px rgba(0,0,0,.65);
+  color:var(--text-faint);
+}
+
+@media (max-width:640px){
+  .topbar-inner{gap:10px;flex-wrap:wrap;}
+  .brand span.txt{display:none;}
+  .steps-nav{order:3;flex-basis:100%;}
+  .topbar-actions{margin-left:auto;flex-wrap:wrap;justify-content:flex-end;gap:6px;}
+  .tb-btn,.reset-btn{padding:6px 10px;font-size:11.5px;}
+  .hero{padding:44px 16px 30px;}
+  .stat{min-width:45%;}
+  .third-counter{position:static;margin-bottom:20px;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="brand" id="brandBtn" type="button" aria-label="Gå til forsiden">
+      <svg class="brand-icon" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+        <path d="M16 3 L27 9 V23 L16 29 L5 23 V9 Z" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M16 9 L20.5 12.2 L18.8 17.4 L13.2 17.4 L11.5 12.2 Z" fill="var(--gold)"/>
+      </svg>
+      <span class="txt">dittvm.no</span>
+    </button>
+    <nav class="steps-nav" id="stepsNav"></nav>
+    <div class="topbar-actions">
+      <button class="tb-btn tb-live" id="liveBtn"><span class="live-dot"></span>Live</button>
+      <button class="tb-btn" id="bracketsBtn"><span class="lbl">Mine brackets</span></button>
+      <button class="tb-btn" id="aboutBtn"><span class="lbl">Om</span></button>
+      <button class="reset-btn" id="resetBtn" title="Nullstill denne bracketen">Nullstill</button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="heroSection">
+  <div class="hero-inner">
+    <div class="eyebrow">⚽ 11. juni – 19. juli 2026 · USA · Mexico · Canada</div>
+    <h1>Lag din <span>bracket</span><br>for VM 2026</h1>
+    <p class="lead">48 lag. 12 grupper. Én mester. Sett opp gruppespillet, plukk ut wildcard-treerne, og før laget ditt hele veien gjennom sluttspillet til finalen på MetLife Stadium.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary" id="startBtn">Start bracketen →</button>
+      <button class="btn btn-ghost" id="continueBtn">Fortsett der jeg slapp</button>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><b>48</b><span>Lag</span></div>
+      <div class="stat"><b>12</b><span>Grupper</span></div>
+      <div class="stat"><b>104</b><span>Kamper</span></div>
+      <div class="stat"><b>1</b><span>Mester</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 1: GROUPS -->
+<section class="step" id="step-groups">
+  <div class="step-head">
+    <div class="k">Steg 1 av 4</div>
+    <h2>Gruppespillet</h2>
+    <p>Bruk pilene til å rangere lagene i hver gruppe. Nr. 1 og 2 går rett til sluttspillet — nr. 3 kjemper videre om en av åtte wildcard-plasser.</p>
+    <button class="btn btn-ghost live-sync-btn" id="syncGroupsBtn"><span class="live-dot"></span>Hent faktiske resultater</button>
+  </div>
+  <div class="group-grid" id="groupGrid"></div>
+  <div class="step-actions">
+    <div></div>
+    <div class="right">
+      <button class="btn btn-primary" id="toThirdBtn" disabled>Neste: Tredjeplasser →</button>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 2: THIRD PLACE -->
+<section class="step" id="step-third">
+  <div class="step-head">
+    <div class="k">Steg 2 av 4</div>
+    <h2>De beste treerne</h2>
+    <p>Tolv lag endte som treer i gruppa si. Åtte av dem går videre til sluttspillet som «lucky losers». Velg dine åtte.</p>
+    <button class="btn btn-ghost live-sync-btn" id="syncThirdBtn"><span class="live-dot"></span>Hent live wildcard-stilling</button>
+  </div>
+  <div class="third-counter"><span class="n" id="thirdCount">0</span><span>/ 8 wildcard-lag valgt</span></div>
+  <div class="third-grid" id="thirdGrid"></div>
+  <div class="step-actions">
+    <button class="btn btn-ghost" id="backToGroupsBtn">← Tilbake</button>
+    <div class="right">
+      <button class="btn btn-primary" id="toBracketBtn" disabled>Neste: Sluttspillet →</button>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 3: BRACKET -->
+<section class="step" id="step-bracket">
+  <div class="step-head">
+    <div class="k">Steg 3 av 4</div>
+    <h2>Sluttspillet</h2>
+    <p>Klikk på et lag for å sende det videre til neste runde — helt til du har din VM-mester. Klikk søppelbøtten for å ta ut et lag manuelt.</p>
+    <button class="btn btn-ghost live-sync-btn" id="syncBracketBtn"><span class="live-dot"></span>Hent faktiske resultater</button>
+  </div>
+  <div class="bracket-note">Trekningen av hvilket treer-lag som møter hvilken gruppevinner i 32-delsfinalen er forenklet i denne appen, og følger ikke nødvendigvis FIFAs offisielle trekningsregler.</div>
+  <div class="bracket-scroll">
+    <div class="bracket" id="bracketEl"></div>
+  </div>
+  <div class="step-actions">
+    <button class="btn btn-ghost" id="backToThirdBtn">← Tilbake</button>
+    <div class="right"></div>
+  </div>
+</section>
+
+<!-- STEP 4: RESULT -->
+<section class="step" id="step-result">
+  <div class="step-head">
+    <div class="k">Steg 4 av 4</div>
+    <h2>Din bracket er klar</h2>
+    <p></p>
+  </div>
+  <div class="result-hero" id="resultHero"></div>
+  <div class="path-list" id="pathList"></div>
+  <div class="step-actions" style="justify-content:center;">
+    <button class="btn btn-ghost" id="backToBracketBtn">← Se sluttspillet</button>
+  </div>
+</section>
+
+<!-- LIVE PAGE -->
+<section class="step" id="step-live">
+  <div class="step-head">
+    <div class="k"><span class="live-dot"></span>Live</div>
+    <h2>Gruppespillet akkurat nå</h2>
+    <p>De faktiske stillingene i alle 12 grupper, hvem som topper wildcard-kampen om treerplassene, og hvor de havner i 32-delsfinalen.</p>
+  </div>
+  <div id="liveBody"></div>
+</section>
+
+<footer class="site-foot">
+  <div>dittvm.no — uavhengig hobbyprosjekt · ikke tilknyttet FIFA, NFF eller offisielle VM-arrangører · grupper oppdatert per juni 2026.</div>
+  <div>Picks lagres kun i din nettleser.</div>
+  <div class="ai-badge">Denne siden er laget med hjelp av AI. Feil eller endringer kan forekomme — er det noe kritisk, dobbeltsjekk selv.</div>
+</footer>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== DATA ===================== */
+const GROUPS = {
+  A:["Mexico","Sør-Afrika","Sør-Korea","Tsjekkia"],
+  B:["Canada","Bosnia-Hercegovina","Qatar","Sveits"],
+  C:["Brasil","Marokko","Haiti","Skottland"],
+  D:["USA","Paraguay","Australia","Tyrkia"],
+  E:["Tyskland","Curaçao","Elfenbenskysten","Ecuador"],
+  F:["Nederland","Japan","Sverige","Tunisia"],
+  G:["Belgia","Egypt","Iran","New Zealand"],
+  H:["Spania","Kapp Verde","Saudi-Arabia","Uruguay"],
+  I:["Frankrike","Senegal","Irak","Norge"],
+  J:["Argentina","Algerie","Østerrike","Jordan"],
+  K:["Portugal","DR Kongo","Usbekistan","Colombia"],
+  L:["England","Kroatia","Ghana","Panama"]
+};
+const FLAGS = {
+  "Mexico":"🇲🇽","Sør-Afrika":"🇿🇦","Sør-Korea":"🇰🇷","Tsjekkia":"🇨🇿",
+  "Canada":"🇨🇦","Bosnia-Hercegovina":"🇧🇦","Qatar":"🇶🇦","Sveits":"🇨🇭",
+  "Brasil":"🇧🇷","Marokko":"🇲🇦","Haiti":"🇭🇹","Skottland":"🏴",
+  "USA":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Tyrkia":"🇹🇷",
+  "Tyskland":"🇩🇪","Curaçao":"🇨🇼","Elfenbenskysten":"🇨🇮","Ecuador":"🇪🇨",
+  "Nederland":"🇳🇱","Japan":"🇯🇵","Sverige":"🇸🇪","Tunisia":"🇹🇳",
+  "Belgia":"🇧🇪","Egypt":"🇪🇬","Iran":"🇮🇷","New Zealand":"🇳🇿",
+  "Spania":"🇪🇸","Kapp Verde":"🇨🇻","Saudi-Arabia":"🇸🇦","Uruguay":"🇺🇾",
+  "Frankrike":"🇫🇷","Senegal":"🇸🇳","Irak":"🇮🇶","Norge":"🇳🇴",
+  "Argentina":"🇦🇷","Algerie":"🇩🇿","Østerrike":"🇦🇹","Jordan":"🇯🇴",
+  "Portugal":"🇵🇹","DR Kongo":"🇨🇩","Usbekistan":"🇺🇿","Colombia":"🇨🇴",
+  "England":"🏴","Kroatia":"🇭🇷","Ghana":"🇬🇭","Panama":"🇵🇦"
+};
+const GROUP_LETTERS = Object.keys(GROUPS);
+
+const R32_WINNER_VS_THIRD = ['A','B','D','E','G','I','K','L'];
+const R32_WINNER_VS_RUNNERUP = [
+  {w:'C', r:'F'}, {w:'F', r:'C'}, {w:'H', r:'J'}, {w:'J', r:'H'}
+];
+const R32_RUNNERUP_PAIRS = [ ['A','B'], ['D','E'], ['G','I'], ['K','L'] ];
+
+/* ===================== STATE (multi-bracket store) ===================== */
+const LS_STORE = 'vm2026-store-v2';
+const LS_OLD = 'vm2026-bracket-state-v1';
+let store = null;
+let state = null; // reference to store.brackets[store.activeId]
+
+function freshGroupOrder(){
+  const o = {};
+  GROUP_LETTERS.forEach(l=>{ o[l] = [...GROUPS[l]]; });
+  return o;
+}
+function newBracketData(name){
+  return {
+    id: 'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+    name: name || 'Min bracket',
+    step: 'hero',
+    groupOrder: freshGroupOrder(),
+    thirdSelected: [],
+    bracket: {},
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+}
+
+function loadStore(){
+  try{
+    const raw = localStorage.getItem(LS_STORE);
+    if(raw) store = JSON.parse(raw);
+  }catch(e){}
+
+  if(!store || !store.brackets || Object.keys(store.brackets).length===0){
+    // try migrating an old single-bracket save
+    let migrated = null;
+    try{
+      const oldRaw = localStorage.getItem(LS_OLD);
+      if(oldRaw){
+        const old = JSON.parse(oldRaw);
+        migrated = newBracketData('Min bracket');
+        migrated.step = old.step || 'hero';
+        migrated.groupOrder = Object.assign(freshGroupOrder(), old.groupOrder||{});
+        migrated.thirdSelected = old.thirdSelected||[];
+        migrated.bracket = old.bracket||{};
+      }
+    }catch(e){}
+    const b = migrated || newBracketData('Min første bracket');
+    store = {brackets:{[b.id]:b}, activeId:b.id};
+  }
+  if(!store.activeId || !store.brackets[store.activeId]){
+    store.activeId = Object.keys(store.brackets)[0];
+  }
+  Object.values(store.brackets).forEach(b=>{
+    GROUP_LETTERS.forEach(l=>{ if(!b.groupOrder[l]) b.groupOrder[l] = [...GROUPS[l]]; });
+    if(!b.thirdSelected) b.thirdSelected = [];
+    if(!b.bracket) b.bracket = {};
+  });
+  state = store.brackets[store.activeId];
+}
+function saveStore(){
+  if(state) state.updatedAt = Date.now();
+  localStorage.setItem(LS_STORE, JSON.stringify(store));
+}
+// kept for backwards-compat with existing calls in this file
+function saveState(){ saveStore(); }
+function loadState(){ loadStore(); }
+
+function bracketCount(){ return Object.keys(store.brackets).length; }
+
+function switchToStep(step){
+  document.getElementById('heroSection').classList.toggle('hide', step!=='hero');
+  ['groups','third','bracket','result'].forEach(s=>{
+    document.getElementById('step-'+s).classList.toggle('visible', step===s);
+  });
+  const liveEl = document.getElementById('step-live');
+  if(liveEl) liveEl.classList.remove('visible');
+  stopLiveTimer();
+}
+
+function switchBracket(id){
+  if(!store.brackets[id] || id===store.activeId){ closeModal(); return; }
+  store.activeId = id;
+  state = store.brackets[id];
+  saveStore();
+  closeModal();
+  const target = (state.step && state.step!=='hero') ? state.step : 'hero';
+  if(target==='hero'){
+    switchToStep('hero');
+    updateNavStates();
+  }else{
+    goToStep(target);
+  }
+  showToast('Bracket byttet', 'Du ser nå «'+state.name+'».', 'success');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function createNewBracket(){
+  const suggestion = 'Min bracket '+(bracketCount()+1);
+  showPromptModal({
+    title: 'Ny bracket',
+    message: 'Gi bracketen din et navn.',
+    placeholder: suggestion,
+    defaultValue: suggestion,
+    confirmLabel: 'Opprett',
+    onSubmit: (name)=>{
+      const b = newBracketData(name || suggestion);
+      store.brackets[b.id] = b;
+      store.activeId = b.id;
+      state = b;
+      saveStore();
+      closeModal();
+      switchToStep('hero');
+      updateNavStates();
+      window.scrollTo({top:0, behavior:'smooth'});
+      showToast('Ny bracket opprettet', '«'+b.name+'» er klar til bruk.', 'success');
+    },
+    onCancel: renderBracketsModal
+  });
+}
+
+function renameBracket(id){
+  const b = store.brackets[id];
+  if(!b) return;
+  showPromptModal({
+    title: 'Gi nytt navn',
+    message: 'Hva vil du kalle denne bracketen?',
+    defaultValue: b.name,
+    confirmLabel: 'Lagre',
+    onSubmit: (name)=>{
+      b.name = name || b.name;
+      saveStore();
+      renderBracketsModal();
+      if(id===store.activeId) updateNavStates();
+      showToast('Navn oppdatert', 'Bracketen heter nå «'+b.name+'».', 'success');
+    },
+    onCancel: renderBracketsModal
+  });
+}
+
+function deleteBracket(id){
+  if(bracketCount()<=1){ showToast('Kan ikke slette', 'Du må ha minst én bracket.', 'warning'); return; }
+  const b = store.brackets[id];
+  showConfirmModal({
+    title: 'Slette bracket?',
+    message: 'Er du sikker på at du vil slette bracketen «'+b.name+'»? Dette kan ikke angres.',
+    confirmLabel: 'Slett',
+    danger: true,
+    onConfirm: ()=>{
+      delete store.brackets[id];
+      if(store.activeId===id){
+        store.activeId = Object.keys(store.brackets)[0];
+        state = store.brackets[store.activeId];
+      }
+      saveStore();
+      renderBracketsModal();
+      const target = (state.step && state.step!=='hero') ? state.step : 'hero';
+      if(target==='hero'){ switchToStep('hero'); }else{ goToStep(target); }
+      updateNavStates();
+      showToast('Bracket slettet', '«'+b.name+'» er borte for godt.', 'success');
+    },
+    onCancel: renderBracketsModal
+  });
+}
+
+/* ---------- modal plumbing ---------- */
+function openModal(){ document.getElementById('modalOverlay').classList.add('show'); }
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+
+function showConfirmModal(opts){
+  const {title, message, confirmLabel, cancelLabel, danger, onConfirm, onCancel} = opts;
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="modal-head">
+      <h3>${title}</h3>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <p>${message}</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirmCancelBtn">${cancelLabel||'Avbryt'}</button>
+      <button class="btn ${danger?'btn-danger':'btn-primary'}" id="confirmOkBtn">${confirmLabel||'Bekreft'}</button>
+    </div>
+  `;
+  const cancel = ()=>{ if(onCancel) onCancel(); else closeModal(); };
+  document.getElementById('modalCloseBtn').addEventListener('click', cancel);
+  document.getElementById('confirmCancelBtn').addEventListener('click', cancel);
+  document.getElementById('confirmOkBtn').addEventListener('click', ()=>{ if(onConfirm) onConfirm(); else closeModal(); });
+  openModal();
+}
+
+function showPromptModal(opts){
+  const {title, message, placeholder, defaultValue, confirmLabel, onSubmit, onCancel} = opts;
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="modal-head">
+      <h3>${title}</h3>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    ${message?`<p>${message}</p>`:''}
+    <input id="promptInput" class="fd-key-input" type="text" placeholder="${placeholder||''}" value="${defaultValue?defaultValue.replace(/"/g,'&quot;'):''}">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="promptCancelBtn">Avbryt</button>
+      <button class="btn btn-primary" id="promptOkBtn">${confirmLabel||'Lagre'}</button>
+    </div>
+  `;
+  const input = document.getElementById('promptInput');
+  setTimeout(()=>{ input.focus(); input.select(); }, 60);
+  const cancel = ()=>{ if(onCancel) onCancel(); else closeModal(); };
+  const submit = ()=>{ if(onSubmit) onSubmit(input.value.trim()); };
+  document.getElementById('modalCloseBtn').addEventListener('click', cancel);
+  document.getElementById('promptCancelBtn').addEventListener('click', cancel);
+  document.getElementById('promptOkBtn').addEventListener('click', submit);
+  input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submit(); if(e.key==='Escape') cancel(); });
+  openModal();
+}
+
+function fmtDate(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('no-NO',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'});
+}
+
+function renderBracketsModal(){
+  const body = document.getElementById('modalBody');
+  const items = Object.values(store.brackets).sort((a,b)=>b.updatedAt-a.updatedAt);
+  let html = `
+    <div class="modal-head">
+      <h3>Mine brackets</h3>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <p>Lag flere brackets — for eksempel én realistisk og én for hjertelaget ditt. Alt lagres i denne nettleseren.</p>
+    <div class="bracket-list">
+  `;
+  items.forEach(b=>{
+    const champ = getChampionOf(b);
+    html += `
+      <div class="bracket-item${b.id===store.activeId?' active':''}">
+        <div class="bi-info" data-id="${b.id}">
+          <b>${b.name}${b.id===store.activeId?' (aktiv)':''}</b>
+          <span>${champ ? 'Mester: '+flag(champ)+' '+champ : 'Ikke fullført'} · ${fmtDate(b.updatedAt)}</span>
+        </div>
+        <div class="bi-actions">
+          <button data-act="rename" data-id="${b.id}" title="Gi nytt navn">✏️</button>
+          <button data-act="delete" data-id="${b.id}" class="danger" title="Slett">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div><button class="new-bracket-btn" id="newBracketBtn">+ Ny bracket</button>`;
+  body.innerHTML = html;
+
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  document.getElementById('newBracketBtn').addEventListener('click', createNewBracket);
+  body.querySelectorAll('.bi-info').forEach(el=>{
+    el.addEventListener('click', ()=>switchBracket(el.dataset.id));
+  });
+  body.querySelectorAll('[data-act="rename"]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); renameBracket(el.dataset.id); });
+  });
+  body.querySelectorAll('[data-act="delete"]').forEach(el=>{
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); deleteBracket(el.dataset.id); });
+  });
+}
+
+function openLiveKeyModal(onReady){
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="modal-head">
+      <h3>Koble til live-data</h3>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <p>Faktiske VM-resultater hentes via en gratis, personlig API-nøkkel fra <a href="${FD_REGISTER_URL}" target="_blank" rel="noopener">football-data.org</a>. Det tar under ett minutt å opprette, krever ingen betaling, og nøkkelen lagres kun i din nettleser.</p>
+    <ol style="color:var(--text-dim);font-size:13.5px;line-height:1.8;padding-left:18px;margin:0 0 16px;">
+      <li>Opprett en gratis konto på football-data.org</li>
+      <li>Kopiér API-nøkkelen fra klientsiden din</li>
+      <li>Lim den inn her og trykk «Koble til»</li>
+    </ol>
+    <input id="fdKeyInput" class="fd-key-input" type="text" placeholder="Lim inn API-nøkkelen din" value="${getFdKey()}">
+    <button class="btn btn-primary" id="fdKeySaveBtn" style="width:100%;justify-content:center;margin-top:12px;">Koble til</button>
+  `;
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  document.getElementById('fdKeySaveBtn').addEventListener('click', ()=>{
+    const val = document.getElementById('fdKeyInput').value.trim();
+    if(!val){ showToast('Mangler nøkkel', 'Lim inn API-nøkkelen din for å fortsette.', 'warning'); return; }
+    setFdKey(val);
+    closeModal();
+    showToast('Tilkoblet', 'Live-data er nå aktivert.', 'success');
+    if(onReady) onReady();
+  });
+}
+
+function renderAboutModal(){
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="modal-head">
+      <h3>Om dittvm.no</h3>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="about-avatar">HS</div>
+    <p><b style="color:var(--text)">Ideen bak</b> er enkel: fotball-VM med 48 lag er kaos i beste forstand, og det beste kaoset fortjener et sted å skrytes av — eller le av, når Norge ryker i sekstendelsfinalen igjen. dittvm.no er et lite verktøy for å sette opp hele turneringstreet, fra gruppespill til finale, og se hvem <i>du</i> tror blir verdensmester.</p>
+    <p><b style="color:var(--text)">Mannen bak</b> siden er Henrik Skogstad — laget som et hobbyprosjekt i VM-feberen, ikke som noe kommersielt eller offisielt produkt. Ingen påloggingskrav, ingen datainnsamling; alt du velger blir liggende i din egen nettleser.</p>
+    <p>Har du innspill, funnet en feil, eller bare vil si hei? Ta det som en hyggelig overraskelse at noen faktisk leste helt hit. 🙂</p>
+  `;
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+}
+
+function getChampionOf(bracketData){
+  const savedState = state, savedStore = store.activeId;
+  // temporarily point state at the given bracket to reuse getFullBracket()/helpers
+  state = bracketData;
+  const full = getFullBracket();
+  const champ = full.final[0] ? bracketData.bracket[full.final[0].id] : null;
+  state = savedState;
+  return champ;
+}
+
+/* ===================== HELPERS ===================== */
+function flag(name){ return FLAGS[name] || '🏳️'; }
+function groupOfTeam(team){
+  for(const l of GROUP_LETTERS){ if(GROUPS[l].includes(team)) return l; }
+  return '';
+}
+function winnerOf(letter){ return state.groupOrder[letter][0]; }
+function runnerUpOf(letter){ return state.groupOrder[letter][1]; }
+function thirdOf(letter){ return state.groupOrder[letter][2]; }
+
+function allGroupsComplete(){
+  // complete simply means user has interacted (order differs isn't required); we just require existence, always true.
+  // We instead require an explicit "confirmed" touch — simplify: always allow proceeding once page loaded.
+  return true;
+}
+
+function thirdPlaceList(){
+  return GROUP_LETTERS.map(l=>({group:l, team: thirdOf(l)}));
+}
+
+/* ===================== BRACKET STRUCTURE BUILD ===================== */
+function buildR32(){
+  const matches = [];
+  R32_WINNER_VS_THIRD.forEach((letter, i)=>{
+    const advancingThirds = [...state.thirdSelected].sort((a,b)=> groupOfTeam(a).localeCompare(groupOfTeam(b)));
+    const thirdTeam = advancingThirds[i] || null;
+    matches.push({
+      id:'r32-'+i,
+      a:{team:winnerOf(letter), label:letter+'1'},
+      b: thirdTeam ? {team:thirdTeam, label:'3.plass ('+groupOfTeam(thirdTeam)+')'} : {team:null, label:'3.plass'}
+    });
+  });
+  R32_WINNER_VS_RUNNERUP.forEach(pair=>{
+    matches.push({
+      id:'r32-wr-'+pair.w,
+      a:{team:winnerOf(pair.w), label:pair.w+'1'},
+      b:{team:runnerUpOf(pair.r), label:pair.r+'2'}
+    });
+  });
+  R32_RUNNERUP_PAIRS.forEach(pair=>{
+    matches.push({
+      id:'r32-rr-'+pair[0]+pair[1],
+      a:{team:runnerUpOf(pair[0]), label:pair[0]+'2'},
+      b:{team:runnerUpOf(pair[1]), label:pair[1]+'2'}
+    });
+  });
+  return matches;
+}
+
+function buildRound(prevMatches, roundKey){
+  const matches = [];
+  for(let i=0;i<prevMatches.length;i+=2){
+    const m1 = prevMatches[i], m2 = prevMatches[i+1];
+    const w1 = state.bracket[m1.id] || null;
+    const w2 = m2 ? (state.bracket[m2.id] || null) : null;
+    matches.push({
+      id: roundKey+'-'+(i/2),
+      a:{team:w1, label: w1 ? null : 'Vinner kamp '+(i+1)},
+      b:{team:w2, label: w2 ? null : 'Vinner kamp '+(i+2)}
+    });
+  }
+  return matches;
+}
+
+function getFullBracket(){
+  const r32 = buildR32();
+  const r16 = buildRound(r32,'r16');
+  const qf = buildRound(r16,'qf');
+  const sf = buildRound(qf,'sf');
+  const final = buildRound(sf,'final');
+  // bronze: losers of sf
+  const bronze = [];
+  if(sf.length===2){
+    const l1 = state.bracket[sf[0].id] ? sf[0].a.team===state.bracket[sf[0].id] ? sf[0].b.team : sf[0].a.team : null;
+    const l2 = state.bracket[sf[1].id] ? sf[1].a.team===state.bracket[sf[1].id] ? sf[1].b.team : sf[1].a.team : null;
+    bronze.push({id:'bronze-0', a:{team:l1,label:l1?null:'Taper SF1'}, b:{team:l2,label:l2?null:'Taper SF2'}});
+  }
+  return {r32,r16,qf,sf,final,bronze};
+}
+
+/* ===================== LIVE DATA (football-data.org) ===================== */
+const FD_KEY_LS = 'vm2026-fd-api-key';
+const FD_BASE = 'https://api.football-data.org/v4';
+const FD_REGISTER_URL = 'https://www.football-data.org/client/register';
+
+function getFdKey(){ return localStorage.getItem(FD_KEY_LS) || ''; }
+function setFdKey(k){ localStorage.setItem(FD_KEY_LS, (k||'').trim()); }
+function clearFdKey(){ localStorage.removeItem(FD_KEY_LS); }
+
+function normalizeStr(s){
+  return (s||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]/g,'');
+}
+// internal team name -> list of matchable strings (FIFA codes + common name variants)
+const TEAM_ALIASES = {
+  "Mexico":["mex","mexico"],
+  "Sør-Afrika":["rsa","southafrica"],
+  "Sør-Korea":["kor","southkorea","korearepublic","korea"],
+  "Tsjekkia":["cze","czechrepublic","czechia"],
+  "Canada":["can","canada"],
+  "Bosnia-Hercegovina":["bih","bosniaandherzegovina","bosniaherzegovina","bosnia"],
+  "Qatar":["qat","qatar"],
+  "Sveits":["sui","switzerland"],
+  "Brasil":["bra","brazil"],
+  "Marokko":["mar","morocco"],
+  "Haiti":["hai","haiti"],
+  "Skottland":["sco","scotland"],
+  "USA":["usa","unitedstates","unitedstatesofamerica"],
+  "Paraguay":["par","paraguay"],
+  "Australia":["aus","australia"],
+  "Tyrkia":["tur","turkey","turkiye"],
+  "Tyskland":["ger","germany"],
+  "Curaçao":["cuw","curacao"],
+  "Elfenbenskysten":["civ","ivorycoast","cotedivoire"],
+  "Ecuador":["ecu","ecuador"],
+  "Nederland":["ned","netherlands","holland"],
+  "Japan":["jpn","japan"],
+  "Sverige":["swe","sweden"],
+  "Tunisia":["tun","tunisia"],
+  "Belgia":["bel","belgium"],
+  "Egypt":["egy","egypt"],
+  "Iran":["irn","iran","irislamicrepublic"],
+  "New Zealand":["nzl","newzealand"],
+  "Spania":["esp","spain"],
+  "Kapp Verde":["cpv","capeverde","caboverde"],
+  "Saudi-Arabia":["ksa","sau","saudiarabia"],
+  "Uruguay":["uru","uruguay"],
+  "Frankrike":["fra","france"],
+  "Senegal":["sen","senegal"],
+  "Irak":["irq","iraq"],
+  "Norge":["nor","norway"],
+  "Argentina":["arg","argentina"],
+  "Algerie":["alg","algeria"],
+  "Østerrike":["aut","austria"],
+  "Jordan":["jor","jordan"],
+  "Portugal":["por","portugal"],
+  "DR Kongo":["cod","drcongo","congodr","democraticrepublicofthecongo"],
+  "Usbekistan":["uzb","uzbekistan"],
+  "Colombia":["col","colombia"],
+  "England":["eng","england"],
+  "Kroatia":["cro","croatia"],
+  "Ghana":["gha","ghana"],
+  "Panama":["pan","panama"]
+};
+function matchApiTeamToInternal(apiTeam){
+  if(!apiTeam) return null;
+  const candidates = [apiTeam.tla, apiTeam.name, apiTeam.shortName].filter(Boolean).map(normalizeStr);
+  for(const internalName in TEAM_ALIASES){
+    const aliases = TEAM_ALIASES[internalName];
+    for(let i=0;i<aliases.length;i++){
+      if(candidates.indexOf(aliases[i])!==-1) return internalName;
+    }
+  }
+  return null;
+}
+
+let liveData = null;   // {stats, fetchedAt, error}
+let liveLoading = false;
+let liveTimer = null;
+
+function startLiveTimer(){
+  stopLiveTimer();
+  liveTimer = setInterval(fetchLiveStandings, 90000);
+}
+function stopLiveTimer(){
+  if(liveTimer){ clearInterval(liveTimer); liveTimer = null; }
+}
+
+async function fetchLiveStandings(silent){
+  const key = getFdKey();
+  if(!key) return;
+  liveLoading = true;
+  if(!silent) renderLive();
+  try{
+    const res = await fetch(FD_BASE+'/competitions/WC/standings', {headers:{'X-Auth-Token':key}});
+    if(!res.ok){
+      const msg = res.status===403 ? 'Ugyldig eller utløpt API-nøkkel.'
+        : res.status===429 ? 'For mange forespørsler mot datakilden akkurat nå — prøv igjen om litt.'
+        : 'Kunne ikke hente data (feilkode '+res.status+').';
+      liveData = {error:msg, fetchedAt:Date.now()};
+    }else{
+      const json = await res.json();
+      const stats = {};
+      (json.standings||[]).forEach(group=>{
+        (group.table||[]).forEach(row=>{
+          const internal = matchApiTeamToInternal(row.team);
+          if(internal){
+            stats[internal] = {
+              played: row.playedGames||0, won: row.won||0, draw: row.draw||0, lost: row.lost||0,
+              gf: row.goalsFor||0, ga: row.goalsAgainst||0, gd: row.goalDifference||0, pts: row.points||0
+            };
+          }
+        });
+      });
+      liveData = {stats, fetchedAt:Date.now(), error:null};
+    }
+  }catch(e){
+    liveData = {error:'Klarte ikke å nå datakilden. Sjekk internettforbindelsen.', fetchedAt:Date.now()};
+  }
+  liveLoading = false;
+  renderLive();
+}
+
+async function fetchLiveMatches(){
+  const key = getFdKey();
+  if(!key) return [];
+  const res = await fetch(FD_BASE+'/competitions/WC/matches', {headers:{'X-Auth-Token':key}});
+  if(!res.ok) throw new Error('http_'+res.status);
+  const json = await res.json();
+  const out = [];
+  (json.matches||[]).forEach(m=>{
+    if(m.stage==='GROUP_STAGE') return; // only knockout results are useful for the bracket sync
+    const homeInternal = matchApiTeamToInternal(m.homeTeam);
+    const awayInternal = matchApiTeamToInternal(m.awayTeam);
+    if(!homeInternal || !awayInternal) return;
+    let winner = null;
+    if(m.status==='FINISHED'){
+      if(m.score && m.score.winner==='HOME_TEAM') winner = homeInternal;
+      else if(m.score && m.score.winner==='AWAY_TEAM') winner = awayInternal;
+      else if(m.score && m.score.penalties && m.score.penalties.homeTeam!=null && m.score.penalties.awayTeam!=null){
+        const hp=m.score.penalties.homeTeam, ap=m.score.penalties.awayTeam;
+        winner = hp>ap ? homeInternal : (ap>hp ? awayInternal : null);
+      }
+    }
+    out.push({a:homeInternal, b:awayInternal, winner});
+  });
+  return out;
+}
+
+function liveGroupOrder(letter, stats){
+  const teams = GROUPS[letter];
+  const withStats = teams.map(t=>({team:t, s: stats[t]||null}));
+  withStats.sort((x,y)=>{
+    const px = x.s?x.s.pts:-1, py = y.s?y.s.pts:-1;
+    if(py!==px) return py-px;
+    const gx = x.s?x.s.gd:-99, gy = y.s?y.s.gd:-99;
+    if(gy!==gx) return gy-gx;
+    const fx = x.s?x.s.gf:-99, fy = y.s?y.s.gf:-99;
+    return fy-fx;
+  });
+  return withStats.map(x=>x.team);
+}
+function computeLiveOrders(stats){
+  const orders = {};
+  GROUP_LETTERS.forEach(l=>{ orders[l] = liveGroupOrder(l, stats); });
+  return orders;
+}
+function computeLiveThirdSelected(orders, stats){
+  const thirds = GROUP_LETTERS.map(l=>({group:l, team:orders[l][2], s:stats[orders[l][2]]||null}));
+  thirds.sort((x,y)=>{
+    const px = x.s?x.s.pts:-1, py = y.s?y.s.pts:-1;
+    if(py!==px) return py-px;
+    const gx = x.s?x.s.gd:-99, gy = y.s?y.s.gd:-99;
+    if(gy!==gx) return gy-gx;
+    const fx = x.s?x.s.gf:-99, fy = y.s?y.s.gf:-99;
+    return fy-fx;
+  });
+  return thirds.slice(0,8).map(x=>x.team);
+}
+function computeLiveBracketPreview(stats){
+  const orders = computeLiveOrders(stats);
+  const thirdSel = computeLiveThirdSelected(orders, stats);
+  const savedState = state;
+  state = {groupOrder:orders, thirdSelected:thirdSel, bracket:{}};
+  const r32 = buildR32();
+  state = savedState;
+  return r32;
+}
+
+/* ---- syncing live data INTO the user's own bracket ---- */
+function ensureLiveKey(onReady){
+  if(getFdKey()){ onReady(); return; }
+  openLiveKeyModal(onReady);
+}
+
+async function syncGroupsFromLive(){
+  ensureLiveKey(async ()=>{
+    showToast('Henter resultater…', 'Henter faktiske gruppetabeller fra VM 2026.', 'info');
+    await fetchLiveStandings(true);
+    if(!liveData || liveData.error){
+      showToast('Kunne ikke oppdatere', liveData?liveData.error:'Ukjent feil.', 'error');
+      return;
+    }
+    const orders = computeLiveOrders(liveData.stats);
+    GROUP_LETTERS.forEach(l=>{ state.groupOrder[l] = orders[l]; });
+    saveState();
+    renderGroups();
+    showToast('Gruppene er oppdatert', 'Rekkefølgen er hentet fra de faktiske resultatene.', 'success');
+  });
+}
+
+async function syncThirdFromLive(){
+  ensureLiveKey(async ()=>{
+    showToast('Henter wildcard-stilling…', 'Henter faktisk poengsum for treerlagene.', 'info');
+    await fetchLiveStandings(true);
+    if(!liveData || liveData.error){
+      showToast('Kunne ikke oppdatere', liveData?liveData.error:'Ukjent feil.', 'error');
+      return;
+    }
+    const orders = {};
+    GROUP_LETTERS.forEach(l=>{ orders[l] = state.groupOrder[l]; });
+    state.thirdSelected = computeLiveThirdSelected(orders, liveData.stats);
+    saveState();
+    renderThird();
+    showToast('Wildcard-lagene er oppdatert', 'De 8 beste treerne er valgt basert på faktisk poengsum.', 'success');
+  });
+}
+
+async function syncBracketFromLive(){
+  ensureLiveKey(async ()=>{
+    showToast('Henter kampresultater…', 'Sjekker om noen av dine kamper allerede er spilt.', 'info');
+    try{
+      const matches = await fetchLiveMatches();
+      let changed = 0;
+      ['r32','r16','qf','sf','final'].forEach(roundKey=>{
+        const full = getFullBracket();
+        full[roundKey].forEach(m=>{
+          if(!m.a.team || !m.b.team) return;
+          const real = matches.find(x=> (x.a===m.a.team && x.b===m.b.team) || (x.a===m.b.team && x.b===m.a.team));
+          if(real && real.winner && state.bracket[m.id]!==real.winner){
+            state.bracket[m.id] = real.winner;
+            changed++;
+          }
+        });
+      });
+      saveState();
+      renderBracket();
+      if(changed>0){
+        showToast('Resultater oppdatert', changed+' kamp(er) ble fylt inn automatisk fra faktiske resultater.', 'success');
+      }else{
+        showToast('Ingen nye resultater', 'Fant ingen ferdigspilte kamper som matcher oppsettet ditt ennå.', 'info');
+      }
+    }catch(e){
+      showToast('Noe gikk galt', 'Klarte ikke å hente kampresultater. Prøv igjen senere.', 'error');
+    }
+  });
+}
+
+/* ===================== RENDER: LIVE PAGE ===================== */
+function fmtTime(ts){
+  if(!ts) return '';
+  return new Date(ts).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'});
+}
+
+function renderLive(){
+  const body = document.getElementById('liveBody');
+  if(!body) return;
+  const key = getFdKey();
+
+  if(!key){
+    body.innerHTML = `
+      <div class="live-setup">
+        <h3>Koble til live-data</h3>
+        <p>Denne siden viser de faktiske gruppetabellene i VM 2026, hentet med din egen gratis API-nøkkel fra <a href="${FD_REGISTER_URL}" target="_blank" rel="noopener">football-data.org</a>. Tar under ett minutt å opprette — ingen betaling, ingen forpliktelser.</p>
+        <button class="btn btn-primary" id="liveConnectBtn">Koble til live-data</button>
+      </div>`;
+    document.getElementById('liveConnectBtn').addEventListener('click', ()=>{
+      openLiveKeyModal(()=>{ fetchLiveStandings(); startLiveTimer(); });
+    });
+    return;
+  }
+
+  if(liveLoading && !liveData){
+    body.innerHTML = `<div class="live-setup center"><p>Henter live-data …</p></div>`;
+    return;
+  }
+
+  if(liveData && liveData.error){
+    body.innerHTML = `
+      <div class="live-setup">
+        <h3>Fikk ikke hentet data</h3>
+        <p>${liveData.error}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="liveRetryBtn">Prøv igjen</button>
+          <button class="btn btn-ghost" id="liveChangeKeyBtn">Bytt API-nøkkel</button>
+        </div>
+      </div>`;
+    document.getElementById('liveRetryBtn').addEventListener('click', ()=>fetchLiveStandings());
+    document.getElementById('liveChangeKeyBtn').addEventListener('click', ()=>{
+      openLiveKeyModal(()=>fetchLiveStandings());
+    });
+    return;
+  }
+
+  if(!liveData){ fetchLiveStandings(); return; }
+
+  const stats = liveData.stats;
+  const orders = computeLiveOrders(stats);
+  const thirdSel = computeLiveThirdSelected(orders, stats);
+  const r32 = computeLiveBracketPreview(stats);
+
+  let html = `
+    <div class="live-status">
+      <span>Sist oppdatert kl. ${fmtTime(liveData.fetchedAt)} · oppdateres automatisk</span>
+      <div style="display:flex;gap:8px;">
+        <button class="tb-btn" id="liveRefreshBtn">Oppdater nå</button>
+        <button class="tb-btn" id="liveChangeKeyBtn2">Bytt nøkkel</button>
+      </div>
+    </div>
+    <div class="live-group-grid">`;
+
+  GROUP_LETTERS.forEach(letter=>{
+    const order = orders[letter];
+    html += `<div class="group-card">
+      <div class="group-card-head"><h3>Gruppe ${letter}</h3></div>
+      <div class="live-table">
+        <div class="live-row live-row-head"><span></span><span></span><span>Lag</span><span>S</span><span>MD</span><span>P</span></div>`;
+    order.forEach((team,idx)=>{
+      const s = stats[team];
+      html += `<div class="live-row r${idx+1}" title="${team}: ${s?(s.won+'V '+s.draw+'U '+s.lost+'T'):'ingen data ennå'}">
+        <span class="rank">${idx+1}</span><span class="flag">${flag(team)}</span><span class="nm">${team}</span>
+        <span>${s?s.played:'–'}</span><span>${s?(s.gd>0?'+':'')+s.gd:'–'}</span><span class="pts">${s?s.pts:'–'}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += `</div>`;
+
+  html += `<h3 class="live-subhead">Wildcard-kampen om treerplassene</h3>
+    <div class="third-grid">`;
+  const allThirds = GROUP_LETTERS.map(l=>({group:l, team:orders[l][2]}))
+    .sort((a,b)=>{
+      const sa=stats[a.team], sb=stats[b.team];
+      const pa=sa?sa.pts:-1, pb=sb?sb.pts:-1;
+      if(pb!==pa) return pb-pa;
+      const ga=sa?sa.gd:-99, gb=sb?sb.gd:-99;
+      return gb-ga;
+    });
+  allThirds.forEach(({group,team})=>{
+    const qualified = thirdSel.includes(team);
+    const s = stats[team];
+    html += `<div class="third-card${qualified?' selected':''}" style="cursor:default;">
+      <div class="flag">${flag(team)}</div>
+      <div class="info"><b>${team}</b><span>Gruppe ${group} · ${s?s.pts+' poeng':'ingen data'}</span></div>
+      <div class="tick" style="color:${qualified?'inherit':'transparent'}">${qualified?'✓':''}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<h3 class="live-subhead">32-delsfinalen akkurat nå</h3>
+    <div class="bracket-note">Denne forhåndsvisningen bruker samme forenklede trekning som resten av siden — ikke FIFAs offisielle trekningsregler for treerlagene.</div>
+    <div class="live-r32-grid">`;
+  r32.forEach(m=>{
+    html += `<div class="match">
+      <div class="mrow${!m.a.team?' empty':''}">${m.a.team?(`<span class="flag">${flag(m.a.team)}</span><span class="nm">${m.a.team}</span>`):(`<span class="nm">${m.a.label}</span>`)}</div>
+      <div class="mrow${!m.b.team?' empty':''}">${m.b.team?(`<span class="flag">${flag(m.b.team)}</span><span class="nm">${m.b.team}</span>`):(`<span class="nm">${m.b.label}</span>`)}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  body.innerHTML = html;
+  document.getElementById('liveRefreshBtn').addEventListener('click', ()=>fetchLiveStandings());
+  document.getElementById('liveChangeKeyBtn2').addEventListener('click', ()=>{
+    openLiveKeyModal(()=>fetchLiveStandings());
+  });
+}
+
+function goToLive(){
+  document.getElementById('heroSection').classList.add('hide');
+  ['groups','third','bracket','result'].forEach(s=>{
+    document.getElementById('step-'+s).classList.remove('visible');
+  });
+  document.getElementById('step-live').classList.add('visible');
+  document.querySelectorAll('.step-pill').forEach(btn=>btn.classList.remove('active'));
+  renderLive();
+  fetchLiveStandings();
+  startLiveTimer();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ===================== RENDER: GROUPS ===================== */
+function renderGroups(){
+  const grid = document.getElementById('groupGrid');
+  grid.innerHTML = '';
+  GROUP_LETTERS.forEach(letter=>{
+    const order = state.groupOrder[letter];
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    const progressPct = 100; // ranking always fully defined
+    card.innerHTML = `
+      <div class="group-card-head">
+        <h3>Gruppe ${letter}</h3>
+        <div class="group-progress" style="--p:${progressPct}"></div>
+      </div>
+      <ul class="team-list"></ul>
+      <div class="group-card-foot"><b>${flag(order[0])} ${order[0]}</b> og ${order[1]} går videre · ${order[2]} kjemper om wildcard</div>
+    `;
+    const list = card.querySelector('.team-list');
+    order.forEach((team, idx)=>{
+      const li = document.createElement('li');
+      li.className = 'team-row r'+(idx+1);
+      li.innerHTML = `
+        <div class="rank">${idx+1}</div>
+        <div class="flag">${flag(team)}</div>
+        <div class="name">${team}</div>
+        <div class="movers">
+          <button data-dir="-1" ${idx===0?'disabled':''} aria-label="Flytt opp">▲</button>
+          <button data-dir="1" ${idx===order.length-1?'disabled':''} aria-label="Flytt ned">▼</button>
+        </div>
+      `;
+      li.querySelectorAll('.movers button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const dir = parseInt(btn.dataset.dir,10);
+          const newIdx = idx+dir;
+          if(newIdx<0||newIdx>=order.length) return;
+          [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
+          saveState();
+          renderGroups();
+          refreshThirdIfNeeded();
+        });
+      });
+      list.appendChild(li);
+    });
+    grid.appendChild(card);
+  });
+}
+
+/* ===================== RENDER: THIRD PLACE ===================== */
+function refreshThirdIfNeeded(){
+  // remove selections that are no longer 3rd place of their group
+  const valid = thirdPlaceList().map(x=>x.team);
+  state.thirdSelected = state.thirdSelected.filter(t=>valid.includes(t));
+  saveState();
+}
+
+function renderThird(){
+  refreshThirdIfNeeded();
+  const grid = document.getElementById('thirdGrid');
+  grid.innerHTML = '';
+  thirdPlaceList().forEach(({group, team})=>{
+    const sel = state.thirdSelected.includes(team);
+    const card = document.createElement('div');
+    card.className = 'third-card'+(sel?' selected':'');
+    card.innerHTML = `
+      <div class="flag">${flag(team)}</div>
+      <div class="info"><b>${team}</b><span>Gruppe ${group} · 3. plass</span></div>
+      <div class="tick">✓</div>
+    `;
+    card.addEventListener('click', ()=>{
+      const i = state.thirdSelected.indexOf(team);
+      if(i>-1){ state.thirdSelected.splice(i,1); }
+      else{
+        if(state.thirdSelected.length>=8){ showToast('Maks 8 lag', 'Fjern ett wildcard-lag for å bytte til et annet.', 'warning'); return; }
+        state.thirdSelected.push(team);
+      }
+      saveState();
+      renderThird();
+      updateNavStates();
+    });
+    grid.appendChild(card);
+  });
+  document.getElementById('thirdCount').textContent = state.thirdSelected.length;
+  document.getElementById('toBracketBtn').disabled = state.thirdSelected.length!==8;
+}
+
+/* ===================== RENDER: BRACKET ===================== */
+const ROUND_TITLES = {r32:'32-delsfinale', r16:'16-delsfinale', qf:'Kvartfinale', sf:'Semifinale', final:'Finale', bronze:'Bronsefinale'};
+
+function svgTrash(){
+  return `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+}
+
+function renderMatchRow(match, slot){
+  const info = match[slot];
+  const otherInfo = match[slot==='a'?'b':'a'];
+  const team = info.team;
+  const picked = state.bracket[match.id];
+  const isPicked = picked && picked===team;
+  const isLoser = picked && team && picked!==team;
+  const empty = !team;
+  const canDelete = !empty && otherInfo.team;
+  const row = document.createElement('div');
+  row.className = 'mrow'+(empty?' empty':'')+(isPicked?' picked':'')+(isLoser?' loser':'');
+  row.innerHTML = empty
+    ? `<div class="nm">${info.label||'—'}</div>`
+    : `<div class="flag">${flag(team)}</div><div class="nm">${team}</div>${info.label && info.label.startsWith('3.plass')?`<div class="tag3">${groupOfTeamShort(team)}</div>`:''}${canDelete?`<button class="mrow-del" type="button" title="Fjern ${team} — ${otherInfo.team} går videre" aria-label="Fjern ${team}">${svgTrash()}</button>`:''}`;
+  if(!empty){
+    row.addEventListener('click', (e)=>{
+      if(e.target.closest('.mrow-del')) return;
+      state.bracket[match.id] = team;
+      saveState();
+      renderBracket();
+    });
+  }
+  if(canDelete){
+    row.querySelector('.mrow-del').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      state.bracket[match.id] = otherInfo.team;
+      saveState();
+      renderBracket();
+      showToast('Lag fjernet', team+' er tatt ut av bracketen — '+otherInfo.team+' går videre.', 'info');
+    });
+  }
+  return row;
+}
+function groupOfTeamShort(team){ return groupOfTeam(team); }
+
+function renderBracket(){
+  const el = document.getElementById('bracketEl');
+  el.innerHTML = '';
+  const {r32,r16,qf,sf,final,bronze} = getFullBracket();
+
+  function col(title, matches, extraClass){
+    const c = document.createElement('div');
+    c.className = 'bracket-col'+(extraClass?(' '+extraClass):'');
+    const t = document.createElement('div');
+    t.className='col-title'; t.textContent = title;
+    c.appendChild(t);
+    matches.forEach(m=>{
+      const box = document.createElement('div');
+      box.className = 'match'+(state.bracket[m.id]?' decided':'');
+      box.appendChild(renderMatchRow(m,'a',matches));
+      box.appendChild(renderMatchRow(m,'b',matches));
+      c.appendChild(box);
+    });
+    return c;
+  }
+
+  el.appendChild(col(ROUND_TITLES.r32, r32));
+  el.appendChild(col(ROUND_TITLES.r16, r16));
+  el.appendChild(col(ROUND_TITLES.qf, qf));
+  el.appendChild(col(ROUND_TITLES.sf, sf));
+
+  // final + champion
+  const finalCol = col(ROUND_TITLES.final, final);
+  el.appendChild(finalCol);
+
+  const champTeam = final[0] ? state.bracket[final[0].id] : null;
+  const champSlot = document.createElement('div');
+  champSlot.className = 'champion-slot';
+  if(champTeam){
+    champSlot.innerHTML = `<div class="trophy-big">🏆</div><div class="flag">${flag(champTeam)}</div><b>${champTeam}</b><span>VM-mester 2026</span>`;
+  }else{
+    champSlot.innerHTML = `<div class="trophy-big" style="opacity:.25">🏆</div><span>Din mester dukker opp her</span>`;
+  }
+  el.appendChild(champSlot);
+
+  if(bronze.length){
+    el.appendChild(col(ROUND_TITLES.bronze, bronze, 'bronze-col'));
+  }
+
+  // handle result step readiness
+  const resultReady = champTeam;
+  document.querySelector('#stepsNav [data-step="result"]').classList.toggle('locked', !resultReady);
+  document.querySelector('#stepsNav [data-step="result"]').disabled = !resultReady;
+
+  if(champTeam){
+    renderResult(getFullBracket(), champTeam);
+  }
+}
+
+/* ===================== RENDER: RESULT ===================== */
+function renderResult(full, champTeam){
+  const hero = document.getElementById('resultHero');
+  hero.innerHTML = `
+    <div class="trophy">🏆</div>
+    <div class="k">Din VM-mester</div>
+    <div class="flag">${flag(champTeam)}</div>
+    <h2>${champTeam}</h2>
+    <p>vinner Fotball-VM 2026 i din bracket</p>
+    <div class="result-actions">
+      <button class="btn btn-primary" id="shareBtn">Del bracketen</button>
+      <button class="btn btn-ghost" id="editBracketBtn">Endre valg</button>
+    </div>
+  `;
+  document.getElementById('shareBtn').addEventListener('click', shareBracket);
+  document.getElementById('editBracketBtn').addEventListener('click', ()=>goToStep('bracket'));
+
+  const rounds = [
+    {key:'r32', label:'32-delsfinale'},
+    {key:'r16', label:'16-delsfinale'},
+    {key:'qf', label:'Kvartfinale'},
+    {key:'sf', label:'Semifinale'},
+    {key:'final', label:'Finale'}
+  ];
+  const list = document.getElementById('pathList');
+  let html = '<h3>Veien til tittelen</h3>';
+  rounds.forEach(r=>{
+    const matches = full[r.key];
+    const m = matches.find(m => state.bracket[m.id]===champTeam);
+    if(m){
+      const opp = m.a.team===champTeam ? m.b.team : m.a.team;
+      html += `<div class="path-row"><div class="rlabel">${r.label}</div><div>${flag(champTeam)} <b>${champTeam}</b> ${opp?('vs '+flag(opp)+' '+opp):''}</div></div>`;
+    }
+  });
+  if(full.bronze.length && state.bracket[full.bronze[0].id]){
+    const bm = full.bronze[0];
+    const bw = state.bracket[bm.id];
+    const bopp = bm.a.team===bw?bm.b.team:bm.a.team;
+    html += `<div class="path-row"><div class="rlabel">Bronsefinale</div><div>${flag(bw)} <b>${bw}</b> slo ${bopp?(flag(bopp)+' '+bopp):'?'}</div></div>`;
+  }
+  list.innerHTML = html;
+}
+
+function shareBracket(){
+  const champ = getChampion();
+  const text = champ
+    ? `Min VM 2026-bracket: ${flag(champ)} ${champ} blir verdensmester! Lag din egen bracket:`
+    : 'Lag din egen VM 2026-bracket:';
+  if(navigator.share){
+    navigator.share({title:'VM 2026 – Lag din bracket', text, url:location.href}).catch(()=>{});
+  }else{
+    navigator.clipboard.writeText(text+' '+location.href).then(()=>showToast('Kopiert!', 'Lenken er lagt på utklippstavlen.', 'success'));
+  }
+}
+function getChampion(){
+  const full = getFullBracket();
+  return full.final[0] ? state.bracket[full.final[0].id] : null;
+}
+
+/* ===================== NAV / STEPS ===================== */
+const STEP_ORDER = ['groups','third','bracket','result'];
+const STEP_LABELS = {groups:'Grupper', third:'Tredjeplass', bracket:'Sluttspill', result:'Resultat'};
+
+function buildStepsNav(){
+  const nav = document.getElementById('stepsNav');
+  nav.innerHTML = '';
+  STEP_ORDER.forEach((s,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'step-pill';
+    btn.dataset.step = s;
+    btn.innerHTML = `<span class="num">${i+1}</span>${STEP_LABELS[s]}`;
+    btn.addEventListener('click', ()=>{ if(!btn.disabled) goToStep(s); });
+    nav.appendChild(btn);
+  });
+}
+
+function updateNavStates(){
+  document.querySelectorAll('.step-pill').forEach(btn=>{
+    const s = btn.dataset.step;
+    btn.classList.toggle('active', state.step===s);
+  });
+  document.getElementById('toThirdBtn').disabled = false;
+
+  const champ = getChampion();
+  const resultPill = document.querySelector('#stepsNav [data-step="result"]');
+  if(resultPill){
+    resultPill.classList.toggle('locked', !champ);
+    resultPill.disabled = !champ;
+  }
+  if(!champ){
+    const rh = document.getElementById('resultHero'); if(rh) rh.innerHTML = '';
+    const pl = document.getElementById('pathList'); if(pl) pl.innerHTML = '';
+  }
+}
+
+function goToStep(step){
+  if(step==='result' && !getChampion()){
+    showToast('Ikke klart ennå', 'Fullfør sluttspillet for å se resultatet.', 'warning');
+    step = 'bracket';
+  }
+  state.step = step;
+  saveState();
+  document.getElementById('heroSection').classList.toggle('hide', step!=='hero');
+  ['groups','third','bracket','result'].forEach(s=>{
+    document.getElementById('step-'+s).classList.toggle('visible', step===s);
+  });
+  document.getElementById('step-live').classList.remove('visible');
+  stopLiveTimer();
+  if(step==='groups') renderGroups();
+  if(step==='third') renderThird();
+  if(step==='bracket') renderBracket();
+  if(step==='result'){
+    const champ = getChampion();
+    if(champ) renderResult(getFullBracket(), champ);
+  }
+  updateNavStates();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ===================== TOAST / ALERTS ===================== */
+let toastTimer;
+const TOAST_ICONS = {success:'✓', info:'i', warning:'!', error:'✕'};
+function showToast(title, subtitle, type){
+  type = type || 'success';
+  const t = document.getElementById('toast');
+  t.className = 'toast show ' + type;
+  t.innerHTML = `<div class="toast-icon">${TOAST_ICONS[type]||'✓'}</div>`+
+    `<div class="toast-body"><b>${title}</b>${subtitle?('<span>'+subtitle+'</span>'):''}</div>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), subtitle ? 4200 : 2800);
+}
+
+/* ===================== INIT ===================== */
+function init(){
+  loadStore();
+  buildStepsNav();
+
+  document.getElementById('brandBtn').addEventListener('click', ()=>{
+    state.step = 'hero';
+    saveStore();
+    switchToStep('hero');
+    updateNavStates();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+  document.getElementById('startBtn').addEventListener('click', ()=>goToStep('groups'));
+  document.getElementById('continueBtn').addEventListener('click', ()=>{
+    goToStep(STEP_ORDER.includes(state.step) ? state.step : 'groups');
+  });
+  document.getElementById('toThirdBtn').addEventListener('click', ()=>goToStep('third'));
+  document.getElementById('backToGroupsBtn').addEventListener('click', ()=>goToStep('groups'));
+  document.getElementById('toBracketBtn').addEventListener('click', ()=>goToStep('bracket'));
+  document.getElementById('backToThirdBtn').addEventListener('click', ()=>goToStep('third'));
+  document.getElementById('backToBracketBtn').addEventListener('click', ()=>goToStep('bracket'));
+
+  document.getElementById('bracketsBtn').addEventListener('click', ()=>{ renderBracketsModal(); openModal(); });
+  document.getElementById('aboutBtn').addEventListener('click', ()=>{ renderAboutModal(); openModal(); });
+  document.getElementById('liveBtn').addEventListener('click', goToLive);
+  document.getElementById('syncGroupsBtn').addEventListener('click', syncGroupsFromLive);
+  document.getElementById('syncThirdBtn').addEventListener('click', syncThirdFromLive);
+  document.getElementById('syncBracketBtn').addEventListener('click', syncBracketFromLive);
+  document.getElementById('modalOverlay').addEventListener('click', (e)=>{
+    if(e.target.id==='modalOverlay') closeModal();
+  });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    const bracketName = state.name;
+    showConfirmModal({
+      title: 'Nullstille bracket?',
+      message: 'Er du sikker på at du vil nullstille alle valgene i «'+bracketName+'»? Dette kan ikke angres.',
+      confirmLabel: 'Nullstill',
+      danger: true,
+      onConfirm: ()=>{
+        const id = state.id, name = state.name;
+        const fresh = newBracketData(name);
+        fresh.id = id;
+        store.brackets[id] = fresh;
+        state = fresh;
+        saveStore();
+        closeModal();
+        switchToStep('hero');
+        updateNavStates();
+        showToast('Bracket nullstilt', '«'+name+'» er tilbake til start — resultatet er også nullstilt.', 'success');
+        window.scrollTo({top:0, behavior:'smooth'});
+      }
+    });
+  });
+
+  document.getElementById('toThirdBtn').disabled = false;
+
+  if(state.step && state.step!=='hero'){
+    goToStep(state.step);
+  }else{
+    switchToStep('hero');
+    updateNavStates();
+  }
+}
+init();
+</script>
+</body>
+</html>
